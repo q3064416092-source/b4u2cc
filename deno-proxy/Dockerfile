@@ -1,10 +1,15 @@
-# 使用 Alpine 基础镜像（腾讯云镜像有缓存）
+# 腾讯云上海 VPS 专用 Dockerfile
+# 使用腾讯云镜像加速
+
 FROM alpine:3.19
 
-# 安装 Deno（使用官方二进制）
+# 设置国内镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencentyun.com/g' /etc/apk/repositories
+
+# 安装 Deno（使用国内镜像加速）
 RUN apk add --no-cache curl unzip ca-certificates && \
     DENO_VERSION=1.40.5 && \
-    curl -fsSL https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip -o deno.zip && \
+    curl -fsSL "https://ghproxy.com/https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip && \
     unzip deno.zip && \
     mv deno /usr/local/bin/ && \
     chmod +x /usr/local/bin/deno && \
@@ -38,7 +43,7 @@ EXPOSE 3456
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget -q --spider http://localhost:3456/healthz || exit 1
 
-# 启动命令 - 限制内存使用
+# 启动命令
 CMD ["run", "--allow-net", "--allow-env", "--allow-read", "--allow-write", \
      "--v8-flags=--max-old-space-size=128", \
      "src/main.ts"]
