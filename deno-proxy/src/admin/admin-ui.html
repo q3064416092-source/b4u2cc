@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代理管理面板 - b4u2cc</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563EB;
+      --primary-light: #3B82F6;
+      --primary-dark: #1D4ED8;
+      --bg-dark: #0F172A;
+      --bg-card: #1E293B;
+      --bg-hover: #334155;
+      --text-primary: #F8FAFC;
+      --text-secondary: #E2E8F0;
+      --text-muted: #94A3B8;
+      --success: #22C55E;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --border: #475569;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* 顶部导航 */
+    .navbar {
+      background: linear-gradient(135deg, var(--bg-card) 0%, #1a2744 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .navbar-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #DC2626;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #16A34A;
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    /* 主容器 */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* 状态卡片 */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .status-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .status-card-title {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .status-card-icon.primary { background: rgba(37, 99, 235, 0.2); color: var(--primary-light); }
+    .status-card-icon.success { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .status-card-icon.warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .status-card-icon.error { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+
+    .status-card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .status-card-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* 上游列表 */
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .upstream-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1rem;
+    }
+
+    .upstream-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upstream-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--border);
+      transition: background 0.3s ease;
+    }
+
+    .upstream-card.enabled::before {
+      background: linear-gradient(90deg, var(--success), #4ADE80);
+    }
+
+    .upstream-card.disabled {
+      opacity: 0.6;
+    }
+
+    .upstream-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .upstream-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .upstream-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .upstream-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .upstream-status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .upstream-status-dot.offline { background: var(--error); }
+    .upstream-status-dot.testing { background: var(--warning); animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .upstream-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .upstream-url {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      word-break: break-all;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      font-family: monospace;
+    }
+
+    .upstream-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .upstream-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .upstream-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+    }
+
+    .upstream-badge.active {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* 表单 */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.9375rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+
+    .form-checkbox input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    /* Toast 提示 */
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .toast {
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      animation: slideIn 0.3s ease;
+      min-width: 280px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--error); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast.info { border-left: 4px solid var(--primary); }
+
+    .toast-icon {
+      font-size: 1.25rem;
+    }
+
+    .toast.success .toast-icon { color: var(--success); }
+    .toast.error .toast-icon { color: var(--error); }
+    .toast.warning .toast-icon { color: var(--warning); }
+    .toast.info .toast-icon { color: var(--primary); }
+
+    .toast-message {
+      flex: 1;
+      font-size: 0.9375rem;
+    }
+
+    /* 加载动画 */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 确认弹窗 */
+    .confirm-text {
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* 设置面板 */
+    .settings-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .settings-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .upstream-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .navbar-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    /* 刷新按钮动画 */
+    .btn-refreshing i {
+      animation: spin 1s linear infinite;
+    }
+
+    /* 隐藏/显示密码 */
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .password-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    /* 延迟加载动画 */
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-server"></i>
+        </div>
+        <span>代理管理面板</span>
+      </div>
+      <div class="navbar-actions">
+        <button class="btn btn-secondary" onclick="refreshData()">
+          <i class="fas fa-sync-alt"></i> 刷新
+        </button>
+        <button class="btn btn-secondary" onclick="openSettings()">
+          <i class="fas fa-cog"></i> 设置
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主容器 -->
+  <div class="container">
+    <!-- 状态卡片 -->
+    <div class="status-grid">
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">服务状态</span>
+          <div class="status-card-icon primary">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+        </div>
+        <div class="status-card-value" id="serviceStatus">-</div>
+        <div class="status-card-label" id="uptime">运行时间计算中...</div>
+      </div>
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">活跃上游</span>
+          <div class="status-card-icon success">
+            <i class="fas fa-plug"></i>
+          </div>
+        </div>
+        <div class="status-card-value" id="activeUpstreams">-</div>
+        <div class="status-card-label">已启用 / 总计</div>
+      </div>
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">总请求</span>
+          <div class="status-card-icon primary">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+        </div>
+        <div class="status-card-value" id="totalRequests">-</div>
+        <div class="status-card-label">历史请求数</div>
+      </div>
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">平均响应</span>
+          <div class="status-card-icon warning">
+            <i class="fas fa-clock"></i>
+          </div>
+        </div>
+        <div class="status-card-value" id="avgResponseTime">-</div>
+        <div class="status-card-label">毫秒</div>
+      </div>
+    </div>
+
+    <!-- 上游列表 -->
+    <div class="section-title">
+      <i class="fas fa-network-wired"></i>
+      上游配置
+      <button class="btn btn-primary btn-sm" style="margin-left: auto;" onclick="openAddModal()">
+        <i class="fas fa-plus"></i> 添加上游
+      </button>
+    </div>
+    <div class="upstream-grid" id="upstreamList">
+      <!-- 动态加载 -->
+    </div>
+  </div>
+
+  <!-- 添加/编辑弹窗 -->
+  <div class="modal-overlay" id="upstreamModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">添加上游</h3>
+        <button class="modal-close" onclick="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="upstreamForm">
+          <input type="hidden" id="upstreamId">
+          <div class="form-group">
+            <label class="form-label">名称 *</label>
+            <input type="text" class="form-input" id="upstreamName" placeholder="例如: OpenAI API" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API 地址 *</label>
+            <input type="url" class="form-input" id="upstreamUrl" placeholder="https://api.openai.com/v1/chat/completions" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="upstreamApiKey" placeholder="sk-..." style="padding-right: 40px;">
+              <button type="button" class="password-toggle" onclick="togglePassword()">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">模型覆盖</label>
+              <input type="text" class="form-input" id="upstreamModel" placeholder="gpt-4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">优先级</label>
+              <input type="number" class="form-input" id="upstreamPriority" value="0" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" id="upstreamEnabled" checked>
+              <span>启用此上游</span>
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveUpstream()">
+          <i class="fas fa-save"></i> 保存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">全局设置</h3>
+        <button class="modal-close" onclick="closeSettings()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-title">负载均衡策略</div>
+          <div class="form-group">
+            <select class="form-input" id="strategySelect">
+              <option value="default">默认（优先级最高）</option>
+              <option value="round-robin">轮询</option>
+              <option value="random">随机</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">请求设置</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">超时时间 (ms)</label>
+              <input type="number" class="form-input" id="timeoutMs" value="30000" min="1000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">最大重试</label>
+              <input type="number" class="form-input" id="maxRetries" value="3" min="0">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+        <button class="btn btn-primary" onclick="saveSettings()">
+          <i class="fas fa-save"></i> 保存设置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 确认删除弹窗 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">确认删除</h3>
+        <button class="modal-close" onclick="closeConfirm()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-text">确定要删除上游 "<span id="deleteName"></span>" 吗？此操作无法撤销。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeConfirm()">取消</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">
+          <i class="fas fa-trash"></i> 删除
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // 全局状态
+    let upstreams = [];
+    let status = {};
+    let deleteId = null;
+
+    // 格式化时间
+    function formatUptime(ms) {
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (days > 0) return `${days}天 ${hours % 24}小时`;
+      if (hours > 0) return `${hours}小时 ${minutes % 60}分钟`;
+      if (minutes > 0) return `${minutes}分钟 ${seconds % 60}秒`;
+      return `${seconds}秒`;
+    }
+
+    // 显示 Toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const icons = {
+        success: 'check-circle',
+        error: 'times-circle',
+        warning: 'exclamation-triangle',
+        info: 'info-circle'
+      };
+
+      toast.innerHTML = `
+        <i class="fas fa-${icons[type]} toast-icon"></i>
+        <span class="toast-message">${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // API 请求
+    async function apiRequest(path, options = {}) {
+      const response = await fetch(`/admin/api${path}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+      return response.json();
+    }
+
+    // 加载数据
+    async function loadData() {
+      try {
+        const [statusRes, upstreamsRes] = await Promise.all([
+          apiRequest('/status'),
+          apiRequest('/upstreams')
+        ]);
+
+        if (statusRes.success) {
+          status = statusRes.data;
+          updateStatusCards();
+        }
+
+        if (upstreamsRes.success) {
+          upstreams = upstreamsRes.data;
+          renderUpstreams();
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error);
+        showToast('加载数据失败', 'error');
+      }
+    }
+
+    // 刷新数据
+    async function refreshData() {
+      const btn = document.querySelector('.btn-secondary');
+      btn.classList.add('btn-refreshing');
+      await loadData();
+      setTimeout(() => btn.classList.remove('btn-refreshing'), 1000);
+    }
+
+    // 更新状态卡片
+    function updateStatusCards() {
+      document.getElementById('serviceStatus').textContent = status.activeUpstreams > 0 ? '在线' : '离线';
+      document.getElementById('serviceStatus').style.color = status.activeUpstreams > 0 ? '#22C55E' : '#EF4444';
+      document.getElementById('uptime').textContent = formatUptime(status.uptime);
+      document.getElementById('activeUpstreams').textContent = `${status.activeUpstreams} / ${status.totalUpstreams}`;
+      document.getElementById('totalRequests').textContent = status.totalRequests || 0;
+      document.getElementById('avgResponseTime').textContent = status.avgResponseTime || 0;
+    }
+
+    // 渲染上游列表
+    function renderUpstreams() {
+      const container = document.getElementById('upstreamList');
+
+      if (upstreams.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="empty-state-icon"><i class="fas fa-server"></i></div>
+            <div class="empty-state-title">暂无上游配置</div>
+            <p>点击右上角按钮添加第一个上游</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = upstreams.map((us, index) => `
+        <div class="upstream-card ${us.enabled ? 'enabled' : 'disabled'} fade-in" style="animation-delay: ${index * 0.05}s">
+          <div class="upstream-header">
+            <div class="upstream-name">
+              <span class="upstream-status-dot ${us.enabled ? 'online' : 'offline'}"></span>
+              ${us.name}
+              ${status.currentUpstreamId === us.id ? '<span class="upstream-badge active"><i class="fas fa-check"></i> 当前使用</span>' : ''}
+            </div>
+            <div class="upstream-actions">
+              <button class="btn btn-icon btn-secondary" onclick="testUpstream(${us.id})" title="测试连接">
+                <i class="fas fa-bolt"></i>
+              </button>
+              <button class="btn btn-icon btn-secondary" onclick="editUpstream(${us.id})" title="编辑">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-icon btn-secondary" onclick="toggleUpstream(${us.id})" title="${us.enabled ? '禁用' : '启用'}">
+                <i class="fas fa-${us.enabled ? 'pause' : 'play'}"></i>
+              </button>
+              <button class="btn btn-icon btn-danger" onclick="deleteUpstream(${us.id}, '${us.name}')" title="删除">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="upstream-url">${us.baseUrl}</div>
+          <div class="upstream-meta">
+            <span class="upstream-meta-item">
+              <i class="fas fa-star"></i> 优先级: ${us.priority}
+            </span>
+            ${us.model ? `<span class="upstream-meta-item"><i class="fas fa-robot"></i> ${us.model}</span>` : ''}
+            <span class="upstream-meta-item">
+              <i class="fas fa-clock"></i> ${new Date(us.updatedAt).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 打开添加弹窗
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '添加上游';
+      document.getElementById('upstreamId').value = '';
+      document.getElementById('upstreamForm').reset();
+      document.getElementById('upstreamModal').classList.add('active');
+    }
+
+    // 编辑上游
+    function editUpstream(id) {
+      const us = upstreams.find(u => u.id === id);
+      if (!us) return;
+
+      document.getElementById('modalTitle').textContent = '编辑上游';
+      document.getElementById('upstreamId').value = us.id;
+      document.getElementById('upstreamName').value = us.name;
+      document.getElementById('upstreamUrl').value = us.baseUrl;
+      document.getElementById('upstreamApiKey').value = us.apiKey || '';
+      document.getElementById('upstreamModel').value = us.model || '';
+      document.getElementById('upstreamPriority').value = us.priority;
+      document.getElementById('upstreamEnabled').checked = us.enabled;
+
+      document.getElementById('upstreamModal').classList.add('active');
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+      document.getElementById('upstreamModal').classList.remove('active');
+    }
+
+    // 保存上游
+    async function saveUpstream() {
+      const id = document.getElementById('upstreamId').value;
+      const data = {
+        name: document.getElementById('upstreamName').value,
+        baseUrl: document.getElementById('upstreamUrl').value,
+        apiKey: document.getElementById('upstreamApiKey').value || undefined,
+        model: document.getElementById('upstreamModel').value || undefined,
+        priority: parseInt(document.getElementById('upstreamPriority').value) || 0,
+        enabled: document.getElementById('upstreamEnabled').checked
+      };
+
+      if (!data.name || !data.baseUrl) {
+        showToast('请填写名称和API地址', 'warning');
+        return;
+      }
+
+      try {
+        let result;
+        if (id) {
+          result = await apiRequest(`/upstreams/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+        } else {
+          result = await apiRequest('/upstreams', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+        }
+
+        if (result.success) {
+          showToast(id ? '上游已更新' : '上游已添加', 'success');
+          closeModal();
+          await loadData();
+        } else {
+          showToast(result.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败: ' + error.message, 'error');
+      }
+    }
+
+    // 测试上游
+    async function testUpstream(id) {
+      const btn = event.target.closest('.btn');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="loading"></span>';
+      btn.disabled = true;
+
+      try {
+        const result = await apiRequest(`/upstreams/${id}/test`, { method: 'POST' });
+        showToast(result.data?.message || '测试请求已发送', 'info');
+
+        // 延迟刷新获取结果
+        setTimeout(() => loadData(), 2000);
+      } catch (error) {
+        showToast('测试失败', 'error');
+      } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    // 切换上游启用状态
+    async function toggleUpstream(id) {
+      try {
+        const result = await apiRequest(`/upstreams/${id}/toggle`, { method: 'POST' });
+        if (result.success) {
+          showToast(result.data.enabled ? '已启用' : '已禁用', 'success');
+          await loadData();
+        } else {
+          showToast(result.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 删除上游
+    function deleteUpstream(id, name) {
+      deleteId = id;
+      document.getElementById('deleteName').textContent = name;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    // 确认删除
+    async function confirmDelete() {
+      if (!deleteId) return;
+
+      try {
+        const result = await apiRequest(`/upstreams/${deleteId}`, { method: 'DELETE' });
+        if (result.success) {
+          showToast('上游已删除', 'success');
+          closeConfirm();
+          await loadData();
+        } else {
+          showToast(result.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败', 'error');
+      } finally {
+        deleteId = null;
+      }
+    }
+
+    // 关闭确认弹窗
+    function closeConfirm() {
+      document.getElementById('confirmModal').classList.remove('active');
+      deleteId = null;
+    }
+
+    // 打开设置
+    async function openSettings() {
+      try {
+        const result = await apiRequest('/settings');
+        if (result.success) {
+          document.getElementById('strategySelect').value = result.data.defaultStrategy;
+          document.getElementById('timeoutMs').value = result.data.timeoutMs;
+          document.getElementById('maxRetries').value = result.data.maxRetries;
+        }
+      } catch (error) {
+        console.error('加载设置失败:', error);
+      }
+      document.getElementById('settingsModal').classList.add('active');
+    }
+
+    // 关闭设置
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+
+    // 保存设置
+    async function saveSettings() {
+      const data = {
+        defaultStrategy: document.getElementById('strategySelect').value,
+        timeoutMs: parseInt(document.getElementById('timeoutMs').value),
+        maxRetries: parseInt(document.getElementById('maxRetries').value)
+      };
+
+      try {
+        const result = await apiRequest('/settings', {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+
+        if (result.success) {
+          showToast('设置已保存', 'success');
+          closeSettings();
+          await loadData();
+        } else {
+          showToast(result.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        showToast('保存失败', 'error');
+      }
+    }
+
+    // 切换密码显示
+    function togglePassword() {
+      const input = document.getElementById('upstreamApiKey');
+      const btn = event.target.closest('.password-toggle');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      // 每10秒自动刷新
+      setInterval(loadData, 10000);
+    });
+
+    // 点击遮罩关闭弹窗
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    // ESC 关闭弹窗
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      }
+    });
+  </script>
+</body>
+</html>

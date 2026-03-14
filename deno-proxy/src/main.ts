@@ -12,6 +12,10 @@ import { RateLimiter } from "./rate_limiter.ts";
 import { randomTriggerSignal } from "./signals.ts";
 import { countTokens } from "./token_counter.ts";
 
+// 管理模块
+import { initAdmin, handleAdminApi } from "./admin/admin-api.ts";
+import { getCurrentUpstreamConfig, selectUpstream, recordRequestStart, recordRequestEnd } from "./admin/upstream-manager.ts";
+
 function extractDeltaText(delta: Record<string, unknown> | undefined): string {
   if (!delta) return "";
   const content = (delta as Record<string, unknown>).content;
@@ -34,6 +38,23 @@ function extractDeltaText(delta: Record<string, unknown> | undefined): string {
 
 const config = loadConfig();
 const rateLimiter = new RateLimiter(config.maxRequestsPerMinute, 60_000);
+
+// 初始化管理模块
+initAdmin();
+
+/** 获取当前上游配置（优先从数据库，否则用环境变量） */
+function getEffectiveUpstreamConfig(): { baseUrl: string; apiKey?: string; model?: string } {
+  const dbConfig = getCurrentUpstreamConfig();
+  if (dbConfig) {
+    return dbConfig;
+  }
+  // 回退到环境变量配置
+  return {
+    baseUrl: config.upstreamBaseUrl,
+    apiKey: config.upstreamApiKey,
+    model: config.upstreamModelOverride,
+  };
+}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -86,15 +107,40 @@ async function handleMessages(req: Request, requestId: string) {
     // 工具解析仅由是否传入 tools 决定：存在 tools 时启用工具协议，否则禁用。
     const hasTools = (body.tools ?? []).length > 0;
     const triggerSignal = hasTools ? randomTriggerSignal() : undefined;
-    const openaiBase = mapClaudeToOpenAI(body, config, triggerSignal);
+
+    // 获取上游配置（优先数据库配置，否则用环境变量）
+    const upstreamCfg = getEffectiveUpstreamConfig();
+
+    // 创建临时配置对象用于调用
+    const upstreamConfig = {
+      ...config,
+      upstreamBaseUrl: upstreamCfg.baseUrl,
+      upstreamApiKey: upstreamCfg.apiKey,
+      upstreamModelOverride: upstreamCfg.model,
+    };
+
+    const openaiBase = mapClaudeToOpenAI(body, upstreamConfig, triggerSignal);
     const injected = injectPrompt(openaiBase, body.tools ?? [], triggerSignal);
     const upstreamReq = { ...openaiBase, messages: injected.messages };
 
+    // 记录请求开始
+    const currentUpstream = selectUpstream();
+    if (currentUpstream) {
+      recordRequestStart(currentUpstream.id);
+    }
+
     await rateLimiter.acquire();
-    const upstreamRes = await callUpstream(upstreamReq, config, requestId);
+    const requestStartTime = Date.now();
+    const upstreamRes = await callUpstream(upstreamReq, upstreamConfig, requestId);
+    const responseTime = Date.now() - requestStartTime;
+
+    // 记录请求结束
+    if (currentUpstream) {
+      recordRequestEnd(currentUpstream.id, upstreamRes.ok, responseTime);
+    }
     await logRequest(requestId, "info", "Upstream responded", {
       status: upstreamRes.status,
-      url: config.upstreamBaseUrl,
+      url: upstreamCfg.baseUrl,
     });
 
     if (!upstreamRes.ok) {
@@ -272,6 +318,25 @@ export const handler = (req: Request) => {
 
   if (req.method === "GET" && url.pathname === "/healthz") {
     return jsonResponse({ status: "ok" });
+  }
+
+  // 管理 UI 页面
+  if (req.method === "GET" && url.pathname === "/admin") {
+    // 读取 admin-ui.html 文件
+    try {
+      const adminHtml = await Deno.readTextFile("./src/admin/admin-ui.html");
+      return new Response(adminHtml, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    } catch {
+      return new Response("Admin UI not found", { status: 404 });
+    }
+  }
+
+  // 管理 API
+  if (url.pathname.startsWith("/admin/api")) {
+    return handleAdminApi(req);
   }
 
   if (req.method === "OPTIONS") {

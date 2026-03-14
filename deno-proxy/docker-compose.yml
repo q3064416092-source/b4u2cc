@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  b4u2cc-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: b4u2cc-proxy
+    ports:
+      - "3456:3456"
+    environment:
+      # 上游 API 配置（可选，优先使用数据库配置）
+      - UPSTREAM_BASE_URL=${UPSTREAM_BASE_URL:-http://your-upstream-api/v1/chat/completions}
+      - UPSTREAM_API_KEY=${UPSTREAM_API_KEY:-}
+      - UPSTREAM_MODEL=${UPSTREAM_MODEL:-}
+      - PORT=3456
+      - HOST=0.0.0.0
+      # 日志级别
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # 请求限制
+      - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-60}
+      - TIMEOUT_MS=${TIMEOUT_MS:-30000}
+      # Token 计算
+      - TOKEN_MULTIPLIER=${TOKEN_MULTIPLIER:-1.0}
+      # 数据目录
+      - DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpu_shares: 512
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3456/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - b4u2cc-network
+
+  # 可选: Nginx 反向代理（需要 SSL 证书）
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: b4u2cc-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - b4u2cc-proxy
+  #   restart: unless-stopped
+  #   networks:
+  #     - b4u2cc-network
+
+networks:
+  b4u2cc-network:
+    driver: bridge
