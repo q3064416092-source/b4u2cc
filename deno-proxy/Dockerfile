@@ -1,5 +1,5 @@
-# 阶段1: 构建
-FROM denoland/deno:1.40.5-alpine AS builder
+# 阶段1: 构建 - 使用阿里云镜像
+FROM registry.cn-hangzhou.aliyuncs.com/denoland/deno:1.40.5-alpine AS builder
 
 WORKDIR /app
 
@@ -10,8 +10,8 @@ COPY src ./src
 # 缓存依赖
 RUN deno cache src/main.ts
 
-# 阶段2: 运行
-FROM denoland/deno:1.40.5-alpine
+# 阶段2: 运行 - 使用阿里云镜像
+FROM registry.cn-hangzhou.aliyuncs.com/denoland/deno:1.40.5-alpine
 
 WORKDIR /app
 
