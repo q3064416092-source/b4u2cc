@@ -1,12 +1,15 @@
 # 使用 Alpine 基础镜像（腾讯云镜像有缓存）
 FROM alpine:3.19
 
-# 安装 Deno
-RUN apk add --no-cache curl unzip && \
-    curl -fsSL https://deno.land/x/install/install.sh | sh && \
-    mv /root/.deno/bin/deno /usr/local/bin/ && \
-    apk del curl unzip && \
-    rm -rf /root/.deno
+# 安装 Deno（使用官方二进制）
+RUN apk add --no-cache curl unzip ca-certificates && \
+    DENO_VERSION=1.40.5 && \
+    curl -fsSL https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip -o deno.zip && \
+    unzip deno.zip && \
+    mv deno /usr/local/bin/ && \
+    chmod +x /usr/local/bin/deno && \
+    rm deno.zip && \
+    apk del unzip
 
 WORKDIR /app
 
