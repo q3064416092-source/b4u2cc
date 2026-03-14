@@ -26,9 +26,6 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     restart: unless-stopped
-    mem_limit: 256m
-    mem_reservation: 64m
-    cpu_shares: 512
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3456/healthz"]
       interval: 30s

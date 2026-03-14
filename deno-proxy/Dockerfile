@@ -1,15 +1,11 @@
-# 腾讯云上海 VPS 专用 Dockerfile
-# 使用腾讯云镜像加速
+# 海外 VPS 标准 Dockerfile
 
 FROM alpine:3.19
 
-# 设置国内镜像源
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencentyun.com/g' /etc/apk/repositories
-
-# 安装 Deno（使用国内镜像加速）
+# 安装 Deno
 RUN apk add --no-cache curl unzip ca-certificates && \
     DENO_VERSION=1.40.5 && \
-    curl -fsSL "https://ghproxy.com/https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip && \
+    curl -fsSL "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip && \
     unzip deno.zip && \
     mv deno /usr/local/bin/ && \
     chmod +x /usr/local/bin/deno && \
@@ -45,5 +41,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # 启动命令
 CMD ["run", "--allow-net", "--allow-env", "--allow-read", "--allow-write", \
-     "--v8-flags=--max-old-space-size=128", \
      "src/main.ts"]
